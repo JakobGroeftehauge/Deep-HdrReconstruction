@@ -112,10 +112,12 @@ class SoftConvNotLearnedMaskUNet(BaseNetwork):
         for i in range(self.layer_size, 0, -1):
             enc_h_key = 'h_{:d}'.format(i - 1)
             dec_l_key = 'dec_{:d}'.format(i)
-
-            h = F.interpolate(h, scale_factor=2, mode=self.upsampling_mode)
-            h_mask = F.interpolate(h_mask, scale_factor=2, mode='nearest')
             
+            _, _, height, width = h_dict[enc_h_key].shape
+            h = F.interpolate(h, size=[height, width], mode=self.upsampling_mode)
+            h_mask = F.interpolate(h_mask, size=[height, width], mode='nearest')
+
+
             h = torch.cat([h, h_dict[enc_h_key]], dim=1)
             h_mask = torch.cat([h_mask, torch.ones_like(h_mask_dict[enc_h_key])], dim=1)
         
