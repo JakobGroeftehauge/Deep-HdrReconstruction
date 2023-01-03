@@ -13,9 +13,11 @@ from lib.io import load_ckpt
 from network.softconvmask import SoftConvNotLearnedMaskUNet
 
 parser = argparse.ArgumentParser(description="Single Image HDR Reconstruction Using a CNN with Masked Features and Perceptual Loss")
-parser.add_argument('--weights', '-w', type=str, required=True, help='Path to the trained CNN weights.')
-parser.add_argument('--output-pth', '-o', dest='output_pth', type=str, required=True, help='Path to store model, path + model name.' )
+parser.add_argument('-weights', '-w', type=str, required=True, help='Path to the trained CNN weights.')
+parser.add_argument('-output-pth', '-o', dest='output_pth', type=str, required=True, help='Path to store model, path + model name.' )
 parser.add_argument('--cpu', action='store_true')
+parser.add_argument('--half', dest='half', action='store_true')
+
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -29,10 +31,13 @@ if __name__ == '__main__':
     model.print_network()
     load_ckpt(args.weights, [('model', model)])
     
-    model.eval()
-
-      
+    model.eval()      
     example = torch.rand(1, 3, 1080, 1920).to(device)
+
+    if args.half: 
+        model.half()
+        example = example.half()
+        
     print("Tracing model...\n\n")
     traced_script_module = torch.jit.trace(model, [example, example])
     traced_script_module.save(args.output_pth)
