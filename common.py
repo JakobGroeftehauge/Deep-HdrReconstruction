@@ -28,7 +28,6 @@ class PipelineParams:
     input_pth: str
     output_pth: str
 
-    providers: list = None # Execution providers for ONNX inference
     N_numbers: int = 6  # Number of 
     disable_model: bool = False      # disable onnx calls, used for debugging on hardware without GPU. 
     half: bool = False      # disable onnx calls, used for debugging on hardware without GPU. 
@@ -37,7 +36,6 @@ class PipelineParams:
     max_luminance: int = 1000
 
     # Automatically initalised variables:
-    model_type: str = None 
     width: int = None
     height: int = None
     fps: float = None
@@ -49,11 +47,6 @@ class PipelineParams:
       self.width, self.height, self.fps, self.n_frames = self.extract_video_data()
       self.size = self.width * self.height * 3
       self.arr_shape = [self.height, self.width, 3]
-      if not self.disable_model:
-        self.get_model_type()
-      if self.providers is None:
-        self.providers = ["TensorrtExecutionProvider", "CUDAExecutionProvider", 'CPUExecutionProvider']
-      
 
     def extract_video_data(self): 
       probe = ffmpeg.probe(self.input_pth)

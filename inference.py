@@ -43,7 +43,7 @@ def launch_inference(params, ind, frames_buffer, pred_buffer, mask_buffer, decQ,
 def preprocess(params, ind, frames_buffer, mask_buffer, decQ): 
     logger = create_logger(params.logger_name)
     logger.info('Pre-Process/decode process started')
-    decoder = setup_decoder(params.input_pth)
+    decoder = setup_decoder(params.input_pth, params.width, params.height)
 
     for i in progressbar(range(params.n_frames)):
       logger.debug("Frame decoding initiated")
@@ -136,7 +136,7 @@ def parse_opt(known=False):
     parser.add_argument('-model', type=str, help="path to inference ONNX-model")
     parser.add_argument('-logging-file', dest="log", default="debug_process.log", type=str, help="name of logging file" )
     parser.add_argument('--disable-model', dest='disable_model', action='store_true', help="disable onnx for debugging on computer wit limited resources")
-    parser.add_argument('--half', dest='disable_model', action='store_true', help="Indicate that model is in half precision")
+    parser.add_argument('--half', dest='half', action='store_true', help="Indicate that model is in half precision")
 
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
@@ -158,8 +158,8 @@ if __name__ == '__main__':
 
   image_arrays = []
   image_arrays_np = []
-  pred_arrays
-  pred_arrays_np
+  pred_arrays = []
+  pred_arrays_np = []
   mask_arrays = []
   mask_arrays_np = []
 
@@ -169,11 +169,11 @@ if __name__ == '__main__':
       arr_mask = multiprocessing.RawArray(ctypes.c_float, int(params.size))
 
       image_arrays.append(arr_image)
-      image_arrays_torch.append(np.frombuffer(arr_image, dtype=np.float32).reshape(params.arr_shape))
+      image_arrays_np.append(np.frombuffer(arr_image, dtype=np.float32).reshape(params.arr_shape))
       pred_arrays.append(arr_image)
-      pred_arrays_torch.append(np.frombuffer(arr_image, dtype=np.float32).reshape(params.arr_shape))
+      pred_arrays_np.append(np.frombuffer(arr_image, dtype=np.float32).reshape(params.arr_shape))
       mask_arrays.append(arr_mask)
-      mask_arrays_torch.append(np.frombuffer(arr_mask, dtype=np.float32).reshape(params.arr_shape))
+      mask_arrays_np.append(np.frombuffer(arr_mask, dtype=np.float32).reshape(params.arr_shape))
 
 
   t1 = time.time()
