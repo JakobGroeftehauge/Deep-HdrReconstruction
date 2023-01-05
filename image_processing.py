@@ -50,11 +50,11 @@ def preprocess_image(image):
 
 def postprocess_image(image, pred_image, mask, sc=20, max_luminance=1000): 
     #image = unnormalize(image).permute(0,2,3,1).numpy()[0,:,:,:]
-    image = unnormalize(torch.from_nuumpy(image)).permute(0,2,3,1).numpy()[0,:,:,:]
+    image = unnormalize(torch.from_numpy(image)).permute(0,2,3,1).numpy()[0,:,:,:]
     #mask = mask.permute(0,2,3,1).numpy()[0,:,:,:]
     mask = mask.transpose(0, 2, 3, 1)[0,:,:,:]
     #pred_img = torch.from_numpy(pred_image.cpu()).permute(0,2,3,1).numpy()[0,:,:,:]
-    pred_img = pred_img.transpose(0, 2, 3, 1)[0,:,:,:]
+    pred_img = pred_image.transpose(0, 2, 3, 1)[0,:,:,:]
 
     y_predict = np.exp(pred_img)-1
     gamma = np.power(image, 2)

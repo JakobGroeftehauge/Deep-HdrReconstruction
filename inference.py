@@ -50,9 +50,10 @@ def preprocess(params, ind, frames_buffer, mask_buffer, decQ):
       in_bytes = decoder.stdout.read(params.size)
       logger.debug('Frame decoded')
       
-      img = np.frombuffer(in_bytes, np.uint8).reshape(params.arr_shape)
+      img = np.frombuffer(in_bytes, np.uint8).reshape([params.height, params.width, 3])
+      img.transpose(2, 0, 1)
       img, mask = preprocess_image(img)
-
+      #print("Img shape: ", img.shape, "   mask shape:  ", mask.shape)
       idx = get_index_indicator(ind)
       np.copyto(frames_buffer[idx], img)
       np.copyto(mask_buffer[idx], mask)
@@ -77,13 +78,14 @@ def postprocess(params, frames_buffer, pred_buffer, mask_buffer, ind, encQ):
       if idx is None: 
         break
       
-      image = np.frombuffer(frames_buffer[idx], dtype=np.float32).reshape(params.arr_shape)
-      pred = np.frombuffer(pred_buffer[idx], dtype=np.float32).reshape(params.arr_shape)
-      mask = np.frombuffer(mask_buffer[idx], dtype=np.float32).reshape(params.arr_shape)
+      image = np.frombuffer(frames_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
+      pred = np.frombuffer(pred_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
+      mask = np.frombuffer(mask_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
 
       img = postprocess_image(image, pred, mask, sc=params.sc,  max_luminance=params.max_luminance )
 
       logger.debug('Write to encoder initiated')
+      print("image shape: ", img.shape)
       encoder.stdin.write(img.astype(np.uint16).tobytes())
       logger.debug('Write to encoder finshed')
       ind[idx] = 0
@@ -112,14 +114,14 @@ def LANet(params, frames_buffer, pred_buffer, mask_buffer, encQ, decQ):
         break
       
       frame = np.frombuffer(frames_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
-      mask = np.from_buffer(mask_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
+      mask  = np.frombuffer(mask_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
       
       logger.debug('Inference started')
       if params.disable_model:
         output = frame.reshape(params.arr_shape)
         time.sleep(0.5)
       else:
-        output = model.run_model(frame, mask, half=params.half)
+        output = model.run_model(frame, mask)
 
       logger.debug('Inference Stopped')
       np.copyto(pred_buffer[idx], output)

@@ -46,7 +46,7 @@ class PipelineParams:
     def __post_init__(self):
       self.width, self.height, self.fps, self.n_frames = self.extract_video_data()
       self.size = self.width * self.height * 3
-      self.arr_shape = [self.height, self.width, 3]
+      self.arr_shape = [3, self.height, self.width]
 
     def extract_video_data(self): 
       probe = ffmpeg.probe(self.input_pth)

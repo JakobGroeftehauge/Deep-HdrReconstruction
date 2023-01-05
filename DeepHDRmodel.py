@@ -5,6 +5,7 @@ class DeepHDRModel:
   def __init__(self, model_pth, device, half=False):
     self.model = torch.jit.load(model_pth)
     self.device = device
+    self.half = half
       
   def run_model(self, frame, mask):
     with torch.no_grad():
@@ -15,6 +16,6 @@ class DeepHDRModel:
           image_ = image_.half()
 
       pred_image = self.model(image_, mask_)
-      return pred_image
+      return pred_image.cpu().numpy()
 
 
