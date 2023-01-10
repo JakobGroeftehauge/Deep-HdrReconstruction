@@ -47,6 +47,19 @@ def preprocess_image(image):
 
     return image, mask 
 
+def postprocess_image_torch(image, pred_image, mask, sc=20, max_luminance=1000): 
+    image = unnormalize(image).permute(0,2,3,1)[0,:,:,:]
+    mask = mask.permute(0,2,3,1)[0,:,:,:]
+    pred_img = pred_image.permute(0, 2, 3, 1)[0,:,:,:]
+
+    y_predict = torch.exp(pred_img)-1
+    gamma = torch.power(image, 2)
+
+    H = mask*gamma + (1-mask)*y_predict
+    img = transformPQ_torch(H * sc, MAX_LUM=max_luminance)
+    img = img * 65535
+    return img
+
 
 def postprocess_image(image, pred_image, mask, sc=20, max_luminance=1000): 
     #image = unnormalize(image).permute(0,2,3,1).numpy()[0,:,:,:]
@@ -77,4 +90,14 @@ def transformPQ(arr, MAX_LUM=1000.0):
     c3 = 18.6875
     Lp = np.power(arr/L, n)
     return np.power((c1 + c2*  Lp) / (1 + c3*Lp), m)    
+  
+def transformPQ_torch(arr, MAX_LUM=1000.0): 
+    L = MAX_LUM #max Luminance
+    m = 78.8438
+    n = 0.1593
+    c1 = 0.8359
+    c2 = 18.8516
+    c3 = 18.6875
+    Lp = torch.power(arr/L, n)
+    return torch.power((c1 + c2*  Lp) / (1 + c3*Lp), m)    
   

@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from image_processing import postprocess_image_torch
 
 class DeepHDRModel:
   def __init__(self, model_pth, device, half=False):
@@ -16,6 +17,9 @@ class DeepHDRModel:
           image_ = image_.half()
 
       pred_image = self.model(image_, mask_)
+
+      pred_image = postprocess_image_torch(image_, pred_image, mask_)
+
       return pred_image.cpu().numpy()
 
 
