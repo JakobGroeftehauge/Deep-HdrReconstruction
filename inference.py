@@ -133,11 +133,11 @@ def LANet(params, frames_buffer, pred_buffer, mask_buffer, encQ, decQ):
 def parse_opt(known=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('-input-file', dest="input", type=str, help='Path to HDR image to transform')
-    parser.add_argument('-output-filename', dest="output", type=str, help='Path to store frames')
+    parser.add_argument('-output-filename', dest="output", default=None, type=str, help='Path to store frames')
     parser.add_argument('-model', type=str, help="path to inference ONNX-model")
     parser.add_argument('-logging-file', dest="log", default="debug_process.log", type=str, help="name of logging file" )
-    parser.add_argument('--width', dest=width, default=None, type=int)
-    parser.add_argument('--height', dest=height, default=None, type=int)
+    parser.add_argument('--width', default=None, type=int)
+    parser.add_argument('--height',default=None, type=int)
     parser.add_argument('--disable-model', dest='disable_model', action='store_true', help="disable onnx for debugging on computer wit limited resources")
     parser.add_argument('--half', dest='half', action='store_true', help="Indicate that model is in half precision")
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
@@ -147,8 +147,9 @@ if __name__ == '__main__':
 
   #multiprocessing.set_start_method('spawn')
   opt = parse_opt(True)
-  params = PipelineParams(opt.model, opt.input, opt.output, opt.width, opt.height, half=opt.half, logger_name=opt.log, disable_model=opt.disable_model)
+  params = PipelineParams(opt.model, opt.input, opt.output, width=opt.width, height=opt.height, half=opt.half, logger_name=opt.log, disable_model=opt.disable_model)
 
+  print("wh: ", params.width, "  ", params.height)
   multiprocessing_logging.install_mp_handler()
   logger = create_logger(params.logger_name)
   logger.debug("Start of program2")

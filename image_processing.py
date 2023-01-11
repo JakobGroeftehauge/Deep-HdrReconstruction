@@ -48,8 +48,8 @@ def preprocess_image(image):
 
     return image, mask 
 
-def postprocess_image_torch(image, pred_image, mask, sc=20, max_luminance=1000): 
-    image = unnormalize(image, device="cuda:0").permute(0,2,3,1)[0,:,:,:]
+def postprocess_image_torch(image, pred_image, mask, sc=20, max_luminance=1000, device="cuda:0"): 
+    image = unnormalize(image, device=device).permute(0,2,3,1)[0,:,:,:]
     mask = mask.permute(0,2,3,1)[0,:,:,:]
     pred_img = pred_image.permute(0, 2, 3, 1)[0,:,:,:]
 
