@@ -59,6 +59,8 @@ def postprocess_image_torch(image, pred_image, mask, sc=20, max_luminance=1000):
     H = mask*gamma + (1-mask)*y_predict
     img = transformPQ_torch(H * sc, MAX_LUM=max_luminance)
     img = img * 65535
+    img = torch.unsqueeze(img.permute(2, 0, 1), 0)
+    
     return img
 
 

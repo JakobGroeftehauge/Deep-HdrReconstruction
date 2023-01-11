@@ -81,7 +81,7 @@ def postprocess(params, frames_buffer, pred_buffer, mask_buffer, ind, encQ):
       #image = np.frombuffer(frames_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
       pred = np.frombuffer(pred_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
       #mask = np.frombuffer(mask_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
-
+      pred = pred.transpose(0, 2, 3, 1)
       #img = postprocess_image(image, pred, mask, sc=params.sc,  max_luminance=params.max_luminance )
 
       logger.debug('Write to encoder initiated')
@@ -136,9 +136,10 @@ def parse_opt(known=False):
     parser.add_argument('-output-filename', dest="output", type=str, help='Path to store frames')
     parser.add_argument('-model', type=str, help="path to inference ONNX-model")
     parser.add_argument('-logging-file', dest="log", default="debug_process.log", type=str, help="name of logging file" )
+    parser.add_argument('--width', dest=width, default=None, type=int)
+    parser.add_argument('--height', dest=height, default=None, type=int)
     parser.add_argument('--disable-model', dest='disable_model', action='store_true', help="disable onnx for debugging on computer wit limited resources")
     parser.add_argument('--half', dest='half', action='store_true', help="Indicate that model is in half precision")
-
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
 
@@ -146,7 +147,7 @@ if __name__ == '__main__':
 
   #multiprocessing.set_start_method('spawn')
   opt = parse_opt(True)
-  params = PipelineParams(opt.model, opt.input, opt.output, half=opt.half, logger_name=opt.log, disable_model=opt.disable_model)
+  params = PipelineParams(opt.model, opt.input, opt.output, opt.width, opt.height, half=opt.half, logger_name=opt.log, disable_model=opt.disable_model)
 
   multiprocessing_logging.install_mp_handler()
   logger = create_logger(params.logger_name)
@@ -175,7 +176,6 @@ if __name__ == '__main__':
       pred_arrays_np.append(np.frombuffer(arr_image, dtype=np.float32).reshape(params.arr_shape))
       mask_arrays.append(arr_mask)
       mask_arrays_np.append(np.frombuffer(arr_mask, dtype=np.float32).reshape(params.arr_shape))
-
 
   t1 = time.time()
   launch_inference(params, indicator, image_arrays_np, pred_arrays_np, mask_arrays_np, decodeQueue, encodeQueue)

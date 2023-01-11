@@ -28,6 +28,8 @@ class PipelineParams:
     input_pth: str
     output_pth: str
 
+    width: int = None
+    height: int = None
     N_numbers: int = 6  # Number of 
     disable_model: bool = False      # disable onnx calls, used for debugging on hardware without GPU. 
     half: bool = False      # disable onnx calls, used for debugging on hardware without GPU. 
@@ -36,15 +38,17 @@ class PipelineParams:
     max_luminance: int = 1000
 
     # Automatically initalised variables:
-    width: int = None
-    height: int = None
     fps: float = None
     n_frames: int = None # number of frames in the video
     size: int = None # Number of data elements in a frame
     arr_shape: list = None # Shape of a frame
 
     def __post_init__(self):
-      self.width, self.height, self.fps, self.n_frames = self.extract_video_data()
+      w, h, self.fps, self.n_frames = self.extract_video_data()
+      if self.width == None or self.height == None:
+        self.width = w
+        self.height = h
+        
       self.size = self.width * self.height * 3
       self.arr_shape = [3, self.height, self.width]
 
