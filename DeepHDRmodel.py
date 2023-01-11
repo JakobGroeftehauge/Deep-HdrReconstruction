@@ -16,7 +16,7 @@ class DeepHDRModel:
           mask_ = mask_.half()
           image_ = image_.half()
 
-      pred_image = self.model(image_, mask_)
+      pred_image = self.model(image_, mask_).transpose(2, 0, 1)
 
       pred_image = postprocess_image_torch(image_, pred_image, mask_)
 
