@@ -23,11 +23,12 @@ class IOException(Exception):
     def __str__(self):
         return repr(self.value)
 
-def unnormalize(x):
+def unnormalize(x, device="cpu"):
     x = x.transpose(1, 3)
-    x = x * torch.Tensor(STD) + torch.Tensor(MEAN)
+    x = x * torch.Tensor(STD).to(device) + torch.Tensor(MEAN).to(device)
     x = x.transpose(1, 3)
     return x
+
 
 def preprocess_image(image): 
     image = image/255.0
@@ -48,12 +49,12 @@ def preprocess_image(image):
     return image, mask 
 
 def postprocess_image_torch(image, pred_image, mask, sc=20, max_luminance=1000): 
-    image = unnormalize(image).permute(0,2,3,1)[0,:,:,:]
+    image = unnormalize(image, device="cuda:0").permute(0,2,3,1)[0,:,:,:]
     mask = mask.permute(0,2,3,1)[0,:,:,:]
     pred_img = pred_image.permute(0, 2, 3, 1)[0,:,:,:]
 
     y_predict = torch.exp(pred_img)-1
-    gamma = torch.power(image, 2)
+    gamma = torch.pow(image, 2)
 
     H = mask*gamma + (1-mask)*y_predict
     img = transformPQ_torch(H * sc, MAX_LUM=max_luminance)
@@ -98,6 +99,6 @@ def transformPQ_torch(arr, MAX_LUM=1000.0):
     c1 = 0.8359
     c2 = 18.8516
     c3 = 18.6875
-    Lp = torch.power(arr/L, n)
-    return torch.power((c1 + c2*  Lp) / (1 + c3*Lp), m)    
+    Lp = torch.pow(arr/L, n)
+    return torch.pow((c1 + c2*  Lp) / (1 + c3*Lp), m)    
   

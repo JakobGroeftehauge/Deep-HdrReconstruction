@@ -78,15 +78,14 @@ def postprocess(params, frames_buffer, pred_buffer, mask_buffer, ind, encQ):
       if idx is None: 
         break
       
-      image = np.frombuffer(frames_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
+      #image = np.frombuffer(frames_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
       pred = np.frombuffer(pred_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
-      mask = np.frombuffer(mask_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
+      #mask = np.frombuffer(mask_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
 
-      img = postprocess_image(image, pred, mask, sc=params.sc,  max_luminance=params.max_luminance )
+      #img = postprocess_image(image, pred, mask, sc=params.sc,  max_luminance=params.max_luminance )
 
       logger.debug('Write to encoder initiated')
-      print("image shape: ", img.shape)
-      encoder.stdin.write(img.astype(np.uint16).tobytes())
+      encoder.stdin.write(pred.astype(np.uint16).tobytes())
       logger.debug('Write to encoder finshed')
       ind[idx] = 0
 
