@@ -56,7 +56,7 @@ class PipelineParams:
 
       self.size = self.width * self.height * 3
       self.arr_shape = [3, self.height, self.width]
-      if output_pth == None: 
+      if self.output_pth == None: 
         self.output_pth = get_output_path(self.input_pth)
 
     def extract_video_data(self): 
