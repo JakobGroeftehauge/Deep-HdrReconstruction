@@ -49,15 +49,18 @@ class PipelineParams:
     arr_shape: list = None # Shape of a frame
 
     def __post_init__(self):
-      w, h, self.fps, self.n_frames = self.extract_video_data()
-      if self.width == None or self.height == None:
-        self.width = w
-        self.height = h
+        w, h, fps, self.n_frames = self.extract_video_data()
+        if self.width == None or self.height == None:
+            self.width = w
+            self.height = h
+        if self.fps == None: 
+            self.fps = fps
+        
 
-      self.size = self.width * self.height * 3
-      self.arr_shape = [3, self.height, self.width]
-      if self.output_pth == None: 
-        self.output_pth = get_output_path(self.input_pth)
+        self.size = self.width * self.height * 3
+        self.arr_shape = [3, self.height, self.width]
+        if self.output_pth == None: 
+            self.output_pth = get_output_path(self.input_pth)
 
     def extract_video_data(self): 
       probe = ffmpeg.probe(self.input_pth)
