@@ -21,8 +21,12 @@ def setup_encoder(output_pth, width, height, fps, MAX_LUM=1000):
         .run_async(pipe_stdin=True))
     return encoder
 
-def get_output_path(string): 
+def get_output_path(string, half=False): 
     path_list = string.split("/")
+    if half: 
+        file_ending = "_DeepHDR.mkv"
+    else: 
+        file_ending = "_DeepHDR_fp16.mkv"
     path_list[-1] = path_list[-1].split(".")[0] + "_DeepHDR.mkv"
     return "/".join(path_list)
 
@@ -56,11 +60,10 @@ class PipelineParams:
         if self.fps == None: 
             self.fps = fps
         
-
         self.size = self.width * self.height * 3
         self.arr_shape = [3, self.height, self.width]
         if self.output_pth == None: 
-            self.output_pth = get_output_path(self.input_pth)
+            self.output_pth = get_output_path(self.input_pth, half=self.half)
 
     def extract_video_data(self): 
       probe = ffmpeg.probe(self.input_pth)

@@ -33,3 +33,7 @@ testpath==0.4.2
 torch
 torchvision
 tqdm==4.35.0
+openEXR
+pyexr
+multiprocessing-logging
+ffmpeg-python

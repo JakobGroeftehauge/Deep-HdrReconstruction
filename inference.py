@@ -150,7 +150,7 @@ if __name__ == '__main__':
   opt = parse_opt(True)
   params = PipelineParams(opt.model, opt.input, opt.output, fps=opt.fps, width=opt.width, height=opt.height, half=opt.half, logger_name=opt.log, disable_model=opt.disable_model)
 
-  print("wh: ", params.width, "  ", params.height)
+  print("wh: ", params.width, "  ", params.height, "  fps: ", params.fps)
   multiprocessing_logging.install_mp_handler()
   logger = create_logger(params.logger_name)
   logger.debug("Start of program2")
