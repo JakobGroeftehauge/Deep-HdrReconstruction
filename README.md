@@ -82,6 +82,12 @@ doi = {10.1145/3386569.3392403}
 }
 ```
 
+## Video Inference 
+
+```
+python inference.py -input-file "path/to/video-file" -model "path/to/model"
+```
+
 ## Contact
 
 Please contact Marcel Santos (mss8@cin.ufpe.br) if there are any issues/comments/questions.
