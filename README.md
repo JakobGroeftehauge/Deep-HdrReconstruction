@@ -85,8 +85,21 @@ doi = {10.1145/3386569.3392403}
 ## Video Inference 
 
 ```
+cd Deep-HdrReconstruction/
 python inference.py -input-file "path/to/video-file" -model "path/to/model"
 ```
+
+Parameters and their description:
+
+>```-input-file```: <br/>
+>```-model```: <br/>
+>```-output-filename```: manually set the path of the output file <br/>
+>```-logging-file```: change the path of the logging file <br/>
+>```-fps```: manualle control the fps of the output video<br/>
+>```-width```: manuallu control the width og the output file<br/>
+>```-height```: manually control the height of the output file <br/>
+>```--half```: Indicate that the data type of the model is fp16 <br/>
+<br/>
 
 ## Contact
 
