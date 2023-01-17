@@ -26,12 +26,12 @@ def get_index_indicator(idx_indicator):
           return idx
     return 
 
-def launch_inference(params, ind, frames_buffer, pred_buffer, mask_buffer, decQ, encQ):  
+def launch_inference(params, ind, frames_buffer, mask_buffer, decQ, encQ):  
     dec = multiprocessing.Process(target=preprocess, args=(params, ind, frames_buffer, mask_buffer, decQ, ))
     dec.start()
-    net = multiprocessing.Process(target=LANet, args=(params, frames_buffer, pred_buffer, mask_buffer, encQ, decQ, ))
+    net = multiprocessing.Process(target=LANet, args=(params, frames_buffer, mask_buffer, encQ, decQ, ))
     net.start()
-    enc = multiprocessing.Process(target=postprocess, args=(params, frames_buffer, pred_buffer, mask_buffer, ind, encQ, ))
+    enc = multiprocessing.Process(target=postprocess, args=(params, frames_buffer, mask_buffer, ind, encQ, ))
     enc.start()
     
     dec.join()
@@ -53,7 +53,6 @@ def preprocess(params, ind, frames_buffer, mask_buffer, decQ):
       img = np.frombuffer(in_bytes, np.uint8).reshape([params.height, params.width, 3])
       img.transpose(2, 0, 1)
       img, mask = preprocess_image(img)
-      #print("Img shape: ", img.shape, "   mask shape:  ", mask.shape)
       idx = get_index_indicator(ind)
       np.copyto(frames_buffer[idx], img)
       np.copyto(mask_buffer[idx], mask)
@@ -66,7 +65,7 @@ def preprocess(params, ind, frames_buffer, mask_buffer, decQ):
     decoder.wait()
     return 
 
-def postprocess(params, frames_buffer, pred_buffer, mask_buffer, ind, encQ):
+def postprocess(params, frames_buffer, mask_buffer, ind, encQ):
     logger = create_logger(params.logger_name)
     logger.info('Post-Process/encode process started')
     encoder = setup_encoder(params.output_pth, params.width, params.height, params.fps, params.max_luminance)
@@ -78,11 +77,8 @@ def postprocess(params, frames_buffer, pred_buffer, mask_buffer, ind, encQ):
       if idx is None: 
         break
       
-      #image = np.frombuffer(frames_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
-      pred = np.frombuffer(pred_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
-      #mask = np.frombuffer(mask_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
+      pred = np.frombuffer(frames_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
       pred = pred.transpose(0, 2, 3, 1)
-      #img = postprocess_image(image, pred, mask, sc=params.sc,  max_luminance=params.max_luminance )
 
       logger.debug('Write to encoder initiated')
       encoder.stdin.write(pred.astype(np.uint16).tobytes())
@@ -96,7 +92,7 @@ def postprocess(params, frames_buffer, pred_buffer, mask_buffer, ind, encQ):
     return 
 
 
-def LANet(params, frames_buffer, pred_buffer, mask_buffer, encQ, decQ): 
+def LANet(params, frames_buffer, mask_buffer, encQ, decQ): 
     import time
     logger = create_logger(params.logger_name)
     logger.info('LANet process started')
@@ -123,7 +119,7 @@ def LANet(params, frames_buffer, pred_buffer, mask_buffer, encQ, decQ):
         output = model.run_model(frame, mask)
 
       logger.debug('Inference Stopped')
-      np.copyto(pred_buffer[idx], output)
+      np.copyto(frames_buffer[idx], output)
 
       encQ.put(idx)
 
@@ -162,25 +158,20 @@ if __name__ == '__main__':
 
   image_arrays = []
   image_arrays_np = []
-  pred_arrays = []
-  pred_arrays_np = []
   mask_arrays = []
   mask_arrays_np = []
 
   for i in range(params.N_numbers): 
       arr_image = multiprocessing.RawArray(ctypes.c_float, int(params.size))
-      arr_pred = multiprocessing.RawArray(ctypes.c_float, int(params.size))
       arr_mask = multiprocessing.RawArray(ctypes.c_float, int(params.size))
 
       image_arrays.append(arr_image)
       image_arrays_np.append(np.frombuffer(arr_image, dtype=np.float32).reshape(params.arr_shape))
-      pred_arrays.append(arr_image)
-      pred_arrays_np.append(np.frombuffer(arr_image, dtype=np.float32).reshape(params.arr_shape))
       mask_arrays.append(arr_mask)
       mask_arrays_np.append(np.frombuffer(arr_mask, dtype=np.float32).reshape(params.arr_shape))
 
   t1 = time.time()
-  launch_inference(params, indicator, image_arrays_np, pred_arrays_np, mask_arrays_np, decodeQueue, encodeQueue)
+  launch_inference(params, indicator, image_arrays_np, mask_arrays_np, decodeQueue, encodeQueue)
   t2 = time.time()
   t = t2-t1
 
