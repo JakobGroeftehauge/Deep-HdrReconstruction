@@ -29,6 +29,11 @@ def unnormalize(x, device="cpu"):
     x = x.transpose(1, 3)
     return x
 
+def postprocess_mask(img, exposure=0.0):
+    sc = np.power(np.power(2.0, exposure), 0.5) 
+    img = ((sc * img[..., ::-1]) * 255).astype(np.uint8)
+    return img
+
 
 def preprocess_image(image): 
     image = image/255.0

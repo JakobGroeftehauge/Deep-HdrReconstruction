@@ -21,6 +21,15 @@ def setup_encoder(output_pth, width, height, fps, MAX_LUM=1000):
         .run_async(pipe_stdin=True))
     return encoder
 
+
+def setup_mask_encoder(output_pth, width, height, fps): 
+    encoder = (ffmpeg
+        .input('pipe:', format='rawvideo', pix_fmt='rgb24', s='{}x{}'.format(width, height), framerate=fps) 
+        .output(output_pth)
+        .overwrite_output()
+        .run_async(pipe_stdin=True))
+    return encoder
+
 def get_output_path(string, half=False): 
     path_list = string.split("/")
     if half: 
@@ -45,6 +54,7 @@ class PipelineParams:
     logger_name: str = "debug.log"  # Name of the debug log
     sc: float = 20 #
     max_luminance: int = 1000
+    save_mask: bool = False
 
     # Automatically initalised variables:
     fps: float = None

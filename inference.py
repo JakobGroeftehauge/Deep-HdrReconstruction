@@ -7,8 +7,8 @@ import ctypes
 import multiprocessing_logging
 import argparse
 import torch
-from image_processing import preprocess_image, postprocess_image
-from common import create_logger, setup_decoder, setup_encoder, PipelineParams
+from image_processing import preprocess_image, postprocess_image, postprocess_mask
+from common import create_logger, setup_decoder, setup_encoder, PipelineParams, setup_mask_encoder
 from DeepHDRmodel import DeepHDRModel
 
 def get_index_indicator(idx_indicator):
@@ -29,7 +29,7 @@ def get_index_indicator(idx_indicator):
 def launch_inference(params, ind, frames_buffer, mask_buffer, decQ, encQ):  
     dec = multiprocessing.Process(target=preprocess, args=(params, ind, frames_buffer, mask_buffer, decQ, ))
     dec.start()
-    net = multiprocessing.Process(target=LANet, args=(params, frames_buffer, mask_buffer, encQ, decQ, ))
+    net = multiprocessing.Process(target=DeepHDR, args=(params, frames_buffer, mask_buffer, encQ, decQ, ))
     net.start()
     enc = multiprocessing.Process(target=postprocess, args=(params, frames_buffer, mask_buffer, ind, encQ, ))
     enc.start()
@@ -53,6 +53,7 @@ def preprocess(params, ind, frames_buffer, mask_buffer, decQ):
       img = np.frombuffer(in_bytes, np.uint8).reshape([params.height, params.width, 3])
       img.transpose(2, 0, 1)
       img, mask = preprocess_image(img)
+      #print("mask stats - min: ", mask.min(), "  max: ", mask.max(), " mean: ", np.mean(mask))
       idx = get_index_indicator(ind)
       np.copyto(frames_buffer[idx], img)
       np.copyto(mask_buffer[idx], mask)
@@ -69,7 +70,13 @@ def postprocess(params, frames_buffer, mask_buffer, ind, encQ):
     logger = create_logger(params.logger_name)
     logger.info('Post-Process/encode process started')
     encoder = setup_encoder(params.output_pth, params.width, params.height, params.fps, params.max_luminance)
-    
+    if params.save_mask:
+      mask_out_pth = params.output_pth.split(".")[0] + "_mask.mp4"
+      #print("mask_out_pth: ", mask_out_pth)
+      mask_encoder = setup_mask_encoder(mask_out_pth, params.width, params.height, params.fps)
+
+
+
     while True:
       idx = encQ.get() 
       logger.debug("Index retrieved from encodeQueue")
@@ -80,6 +87,14 @@ def postprocess(params, frames_buffer, mask_buffer, ind, encQ):
       pred = np.frombuffer(frames_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
       pred = pred.transpose(0, 2, 3, 1)
 
+      if params.save_mask:
+        mask = np.frombuffer(mask_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
+        mask = postprocess_mask(mask)
+        mask = mask.transpose(0, 2, 3, 1)
+        mask_encoder.stdin.write(mask.astype(np.uint8).tobytes())
+        #print("write to mask encoder") 
+
+
       logger.debug('Write to encoder initiated')
       encoder.stdin.write(pred.astype(np.uint16).tobytes())
       logger.debug('Write to encoder finshed')
@@ -88,18 +103,21 @@ def postprocess(params, frames_buffer, mask_buffer, ind, encQ):
     logger.debug("Initiated closing of encoder")
     encoder.stdin.close()
     encoder.wait()
+    if params.save_mask: 
+      mask_encoder.stdin.close()
+      mask_encoder.wait()
     logger.debug("Encoder closed")
     return 
 
 
-def LANet(params, frames_buffer, mask_buffer, encQ, decQ): 
+def DeepHDR(params, frames_buffer, mask_buffer, encQ, decQ): 
     import time
     logger = create_logger(params.logger_name)
-    logger.info('LANet process started')
+    logger.info('DeepHDR process started')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     if not params.disable_model:
-      model = DeepHDRModel(params.model_pth, device, half=opt.half)
+      model = DeepHDRModel(params.model_pth, device, half=params.half)
 
     while True: 
       logger.debug("decQ size: {} encQ size: {}".format(decQ.qsize(), encQ.qsize()))
@@ -137,6 +155,8 @@ def parse_opt(known=False):
     parser.add_argument('-height',default=None, type=int)
     parser.add_argument('--disable-model', dest='disable_model', action='store_true', help="disable onnx for debugging on computer wit limited resources")
     parser.add_argument('--half', dest='half', action='store_true', help="Indicate that model is in half precision")
+    parser.add_argument('--save-mask', dest='save_mask', action='store_true', help="Encode video of mask for each frame.")
+
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
 
@@ -144,7 +164,7 @@ if __name__ == '__main__':
 
   #multiprocessing.set_start_method('spawn')
   opt = parse_opt(True)
-  params = PipelineParams(opt.model, opt.input, opt.output, fps=opt.fps, width=opt.width, height=opt.height, half=opt.half, logger_name=opt.log, disable_model=opt.disable_model)
+  params = PipelineParams(opt.model, opt.input, opt.output, fps=opt.fps, width=opt.width, height=opt.height, half=opt.half, save_mask=opt.save_mask, logger_name=opt.log, disable_model=opt.disable_model)
 
   print("wh: ", params.width, "  ", params.height, "  fps: ", params.fps)
   multiprocessing_logging.install_mp_handler()
