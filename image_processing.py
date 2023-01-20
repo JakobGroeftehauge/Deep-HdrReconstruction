@@ -35,11 +35,11 @@ def postprocess_mask(img, exposure=0.0):
     return img
 
 
-def preprocess_image(image): 
+def preprocess_image(image, sat_th=0.95): 
     image = image/255.0
 
     # Calculate mask 
-    mask = 1 - get_saturated_regions(image)
+    mask = 1 - get_saturated_regions(image, sat_th)
 
     #mask = torch.from_numpy(mask).permute(2,0,1)
     #mask = torch.unsqueeze(mask, 0)

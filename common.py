@@ -55,6 +55,7 @@ class PipelineParams:
     sc: float = 20 #
     max_luminance: int = 1000
     save_mask: bool = False
+    sat_threshold: float = 0.95
 
     # Automatically initalised variables:
     fps: float = None

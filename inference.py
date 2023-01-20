@@ -9,7 +9,6 @@ import argparse
 import torch
 from image_processing import preprocess_image, postprocess_image, postprocess_mask
 from common import create_logger, setup_decoder, setup_encoder, PipelineParams, setup_mask_encoder
-from DeepHDRmodel import DeepHDRModel
 from lib.img_io import writeLDR  
 
 def get_index_indicator(idx_indicator):
@@ -53,7 +52,7 @@ def preprocess(params, ind, frames_buffer, mask_buffer, decQ):
       
       img = np.frombuffer(in_bytes, np.uint8).reshape([params.height, params.width, 3])
       img.transpose(2, 0, 1)
-      img, mask = preprocess_image(img)
+      img, mask = preprocess_image(img, params.sat_threshold)
       #print("mask stats - min: ", mask.min(), "  max: ", mask.max(), " mean: ", np.mean(mask))
       idx = get_index_indicator(ind)
       np.copyto(frames_buffer[idx], img)
@@ -115,7 +114,8 @@ def postprocess(params, frames_buffer, mask_buffer, ind, encQ):
 
 
 def DeepHDR(params, frames_buffer, mask_buffer, encQ, decQ): 
-    import time
+    from DeepHDRmodel import DeepHDRModel
+
     logger = create_logger(params.logger_name)
     logger.info('DeepHDR process started')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -135,6 +135,7 @@ def DeepHDR(params, frames_buffer, mask_buffer, encQ, decQ):
       #writeLDR(mask.transpose(0, 2, 3, 1)[0,:,:,:], "/content/test.png")
       logger.debug('Inference started')
       if params.disable_model:
+        import time
         output = frame.reshape(params.arr_shape)
         time.sleep(0.5)
       else:
@@ -155,6 +156,7 @@ def parse_opt(known=False):
     parser.add_argument('-model', type=str, help="path to inference ONNX-model")
     parser.add_argument('-logging-file', dest="log", default="debug_process.log", type=str, help="name of logging file" )
     parser.add_argument('-fps', default=None, type=int)
+    parser.add_argument('-sat-threshold',dest='sat_threshold', default=0.95, type=float)
     parser.add_argument('-width', default=None, type=int)
     parser.add_argument('-height',default=None, type=int)
     parser.add_argument('--disable-model', dest='disable_model', action='store_true', help="disable onnx for debugging on computer wit limited resources")
@@ -168,7 +170,7 @@ if __name__ == '__main__':
 
   #multiprocessing.set_start_method('spawn')
   opt = parse_opt(True)
-  params = PipelineParams(opt.model, opt.input, opt.output, fps=opt.fps, width=opt.width, height=opt.height, half=opt.half, save_mask=opt.save_mask, logger_name=opt.log, disable_model=opt.disable_model)
+  params = PipelineParams(opt.model, opt.input, opt.output, fps=opt.fps, sat_threshold=opt.sat_threshold, width=opt.width, height=opt.height, half=opt.half, save_mask=opt.save_mask, logger_name=opt.log, disable_model=opt.disable_model)
 
   print("wh: ", params.width, "  ", params.height, "  fps: ", params.fps)
   multiprocessing_logging.install_mp_handler()
