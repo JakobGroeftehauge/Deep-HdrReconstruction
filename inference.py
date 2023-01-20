@@ -10,6 +10,7 @@ import torch
 from image_processing import preprocess_image, postprocess_image, postprocess_mask
 from common import create_logger, setup_decoder, setup_encoder, PipelineParams, setup_mask_encoder
 from DeepHDRmodel import DeepHDRModel
+from lib.img_io import writeLDR  
 
 def get_index_indicator(idx_indicator):
     """
@@ -89,8 +90,11 @@ def postprocess(params, frames_buffer, mask_buffer, ind, encQ):
 
       if params.save_mask:
         mask = np.frombuffer(mask_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
+        #writeLDR(mask.transpose(0, 2, 3, 1)[0,:,:,:], "/content/test2.png")
+        mask = mask.transpose(0, 2, 3, 1)[0, :, :, : ]
+
         mask = postprocess_mask(mask)
-        mask = mask.transpose(0, 2, 3, 1)
+        #mask = mask.transpose(0, 2, 3, 1)
         mask_encoder.stdin.write(mask.astype(np.uint8).tobytes())
         #print("write to mask encoder") 
 
@@ -128,7 +132,7 @@ def DeepHDR(params, frames_buffer, mask_buffer, encQ, decQ):
       
       frame = np.frombuffer(frames_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
       mask  = np.frombuffer(mask_buffer[idx], dtype=np.float32).reshape([1] + params.arr_shape)
-      
+      #writeLDR(mask.transpose(0, 2, 3, 1)[0,:,:,:], "/content/test.png")
       logger.debug('Inference started')
       if params.disable_model:
         output = frame.reshape(params.arr_shape)

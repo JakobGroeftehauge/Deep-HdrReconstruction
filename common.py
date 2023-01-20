@@ -24,7 +24,7 @@ def setup_encoder(output_pth, width, height, fps, MAX_LUM=1000):
 
 def setup_mask_encoder(output_pth, width, height, fps): 
     encoder = (ffmpeg
-        .input('pipe:', format='rawvideo', pix_fmt='rgb24', s='{}x{}'.format(width, height), framerate=fps) 
+        .input('pipe:', format='rawvideo', pix_fmt='bgr24', s='{}x{}'.format(width, height), framerate=fps) 
         .output(output_pth)
         .overwrite_output()
         .run_async(pipe_stdin=True))
