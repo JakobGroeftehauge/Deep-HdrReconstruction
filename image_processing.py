@@ -40,7 +40,6 @@ def preprocess_image(image, sat_th=0.95):
 
     # Calculate mask 
     mask = 1 - get_saturated_regions(image, sat_th)
-    mask = np.ones_like(mask)
     #mask = torch.from_numpy(mask).permute(2,0,1)
     #mask = torch.unsqueeze(mask, 0)
     mask = np.expand_dims(mask.transpose((2, 0, 1)), axis=0)
